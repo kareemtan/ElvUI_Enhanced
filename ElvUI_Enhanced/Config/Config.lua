@@ -1,5 +1,29 @@
 local E, L, V, P, G = unpack(ElvUI)
 local EE = E:GetModule("ElvUI_Enhanced")
+local ACH = E.Libs.ACH
+
+local format = string.format
+
+local C = {
+	version = tonumber(GetAddOnMetadata("ElvUI_OptionsUI", "Version")),
+	Blank = function() return "" end,
+	SearchCache = {},
+	SearchText = "",
+}
+
+C.Values = {
+	GrowthDirection = {
+		DOWN_RIGHT = format(L["%s and then %s"], L["Down"], L["Right"]),
+		DOWN_LEFT = format(L["%s and then %s"], L["Down"], L["Left"]),
+		UP_RIGHT = format(L["%s and then %s"], L["Up"], L["Right"]),
+		UP_LEFT = format(L["%s and then %s"], L["Up"], L["Left"]),
+		RIGHT_DOWN = format(L["%s and then %s"], L["Right"], L["Down"]),
+		RIGHT_UP = format(L["%s and then %s"], L["Right"], L["Up"]),
+		LEFT_DOWN = format(L["%s and then %s"], L["Left"], L["Down"]),
+		LEFT_UP = format(L["%s and then %s"], L["Left"], L["Up"]),
+	},
+	FontFlags = ACH.FontValues,
+}
 
 local function GeneralOptions()
 	local M = E:GetModule("Enhanced_Misc")
@@ -198,7 +222,7 @@ local function BlizzardOptions()
 	local CHAR = E:GetModule("Enhanced_CharacterFrame")
 
 	local choices = {
-		["NONE"] = L["NONE"],
+		["NONE"] = L["None"],
 		["COLLAPSED"] = L["Collapsed"],
 		["HIDDEN"] = L["Hidden"]
 	}
@@ -272,7 +296,9 @@ local function BlizzardOptions()
 					enable = {
 						order = 2,
 						type = "toggle",
-						name = L["Enhanced Character Frame"]
+						name = L["Enhanced Character Frame"],
+						desc = string.format('%s (%s)', L["Enable/Disable the display of the Cata+ character frame stats panel"], L["Disabled if WotLK HD client interface enabled"]),
+						disabled = function() return E:IsHDPatch() end
 					},
 					modelFrames = {
 						order = 3,
@@ -523,8 +549,18 @@ local function BlizzardOptions()
 							WF:QuestLevelToggle()
 						end
 					},
-					settings = {
+					color = {
 						order = 5,
+						type = "toggle",
+						name = L["Colorize Quests"],
+						desc = L["Color quests by difficulty and progress in the Quest Tracker."],
+						set = function(info, value)
+							E.db.enhanced.watchframe.color = value
+							WF:QuestColorToggle()
+						end
+					},
+					settings = {
+						order = 6,
 						type = "group",
 						name = L["Visibility State"],
 						guiInline = true,
@@ -626,19 +662,14 @@ local function BlizzardOptions()
 						order = 7,
 						type = "range",
 						min = 6, max = 36, step = 1,
-						name = L["FONT_SIZE"],
+						name = L["Font Size"],
 						disabled = function() return not E.db.enhanced.blizzard.errorFrame.enable end
 					},
 					fontOutline = {
 						order = 8,
 						type = "select",
 						name = L["Font Outline"],
-						values = {
-							["NONE"] = L["NONE"],
-							["OUTLINE"] = "OUTLINE",
-							["MONOCHROMEOUTLINE"] = "MONOCROMEOUTLINE",
-							["THICKOUTLINE"] = "THICKOUTLINE"
-						},
+						values = C.Values.FontFlags,
 						disabled = function() return not E.db.enhanced.blizzard.errorFrame.enable end
 					}
 				}
@@ -840,18 +871,13 @@ local function EquipmentInfoOptions()
 						order = 2,
 						type = "range",
 						min = 6, max = 36, step = 1,
-						name = L["FONT_SIZE"]
+						name = L["Font Size"]
 					},
 					fontOutline = {
 						order = 3,
 						type = "select",
 						name = L["Font Outline"],
-						values = {
-							["NONE"] = L["NONE"],
-							["OUTLINE"] = "OUTLINE",
-							["MONOCHROMEOUTLINE"] = "MONOCROMEOUTLINE",
-							["THICKOUTLINE"] = "THICKOUTLINE"
-						}
+						values = C.Values.FontFlags
 					}
 				}
 			}
@@ -910,7 +936,7 @@ local function MapOptions()
 end
 
 local function MinimapOptions()
-	E.Options.args.maps.args.minimap.args.locationTextGroup.args.locationText.values = {
+	E.Options.args.maps.args.minimap.args.cluster.args.locationTextGroup.args.locationText.values = {
 		["MOUSEOVER"] = L["Minimap Mouseover"],
 		["SHOW"] = L["Always Display"],
 		["ABOVE"] = EE:ColorizeSettingName(L["Above Minimap"]),
@@ -940,7 +966,7 @@ local function MinimapOptions()
 				name = L["Location Panel"],
 				desc = L["Toggle Location Panel."]
 			},
-			locationText = E.Options.args.maps.args.minimap.args.locationTextGroup.args.locationText,
+			locationText = E.Options.args.maps.args.minimap.args.cluster.args.locationTextGroup.args.locationText,
 			showlocationdigits = {
 				order = 2,
 				type = "toggle",
@@ -1202,26 +1228,21 @@ local function NamePlatesOptions()
 							fontSize = {
 								order = 2,
 								type = "range",
-								name = L["FONT_SIZE"],
+								name = L["Font Size"],
 								min = 4, max = 33, step = 1,
 							},
 							fontOutline = {
 								order = 3,
 								type = "select",
 								name = L["Font Outline"],
-								values = {
-									["NONE"] = L["NONE"],
-									["OUTLINE"] = "OUTLINE",
-									["MONOCHROMEOUTLINE"] = "MONOCROMEOUTLINE",
-									["THICKOUTLINE"] = "THICKOUTLINE"
-								}
+								values = C.Values.FontFlags
 							},
 							separator = {
 								order = 4,
 								type = "select",
 								name = L["Separator"],
 								values = {
-									[" "] = L["NONE"],
+									[" "] = L["None"],
 									["<"] = "< >",
 									["("] = "( )",
 									["["] = "[ ]",
@@ -1247,22 +1268,22 @@ local function NamePlatesOptions()
 									raid = {
 										order = 1,
 										type = "color",
-										name = L["RAID"],
+										name = L["Raid"],
 									},
 									party = {
 										order = 2,
 										type = "color",
-										name = L["PARTY"],
+										name = L["Party"],
 									},
 									guild = {
 										order = 3,
 										type = "color",
-										name = L["GUILD"],
+										name = L["Guild"],
 									},
 									none = {
 										order = 4,
 										type = "color",
-										name = L["ALL"],
+										name = _G.ALL,
 									},
 								}
 							},
@@ -1328,19 +1349,14 @@ local function NamePlatesOptions()
 							fontSize = {
 								order = 2,
 								type = "range",
-								name = L["FONT_SIZE"],
+								name = L["Font Size"],
 								min = 4, max = 33, step = 1
 							},
 							fontOutline = {
 								order = 3,
 								type = "select",
 								name = L["Font Outline"],
-								values = {
-									["NONE"] = L["NONE"],
-									["OUTLINE"] = "OUTLINE",
-									["MONOCHROMEOUTLINE"] = "MONOCROMEOUTLINE",
-									["THICKOUTLINE"] = "THICKOUTLINE"
-								}
+								values = C.Values.FontFlags,
 							},
 							reactionColor = {
 								order = 4,
@@ -1369,7 +1385,7 @@ local function NamePlatesOptions()
 								type = "select",
 								name = L["Separator"],
 								values = {
-									[" "] = L["NONE"],
+									[" "] = L["None"],
 									["<"] = "< >",
 									["("] = "( )"
 								}
@@ -1396,18 +1412,8 @@ local function TooltipOptions()
 				type = "header",
 				name = EE:ColorizeSettingName(L["Tooltip"])
 			},
-			itemQualityBorderColor = {
-				order = 1,
-				type = "toggle",
-				name = L["Item Border Color"],
-				desc = L["Colorize the tooltip border based on item quality."],
-				set = function(info, value)
-					E.db.enhanced.tooltip.itemQualityBorderColor = value
-					E:GetModule("Enhanced_ItemBorderColor"):ToggleState()
-				end
-			},
 			tooltipIcon = {
-				order = 2,
+				order = 1,
 				type = "group",
 				name = L["Tooltip Icon"],
 				guiInline = true,
@@ -1471,7 +1477,7 @@ local function TooltipOptions()
 				}
 			},
 			progressInfo = {
-				order = 3,
+				order = 2,
 				type = "group",
 				name = L["Progress Info"],
 				guiInline = true,
@@ -1755,7 +1761,7 @@ local function InterruptTrackerOptions()
 					fontSize = {
 						order = 5,
 						type = "range",
-						name = L["FONT_SIZE"],
+						name = L["Font Size"],
 						min = 6, max = 32, step = 1
 					},
 					fontOutline = {
@@ -1763,12 +1769,7 @@ local function InterruptTrackerOptions()
 						type = "select",
 						name = L["Font Outline"],
 						desc = L["Set the font outline."],
-						values = {
-							["NONE"] = L["NONE"],
-							["OUTLINE"] = "OUTLINE",
-							["MONOCHROMEOUTLINE"] = "MONOCROMEOUTLINE",
-							["THICKOUTLINE"] = "THICKOUTLINE"
-						}
+						values = C.Values.FontFlags,
 					}
 				}
 			}
@@ -1843,12 +1844,12 @@ local function UnitFrameOptions()
 			player = {
 				order = 3,
 				type = "group",
-				name = L["PLAYER"],
+				name = L["Player"],
 				args = {
 					header = {
 						order = 1,
 						type = "header",
-						name = L["PLAYER"]
+						name = L["Player"]
 					},
 					detachPortrait = {
 						order = 3,
@@ -1899,12 +1900,12 @@ local function UnitFrameOptions()
 			target = {
 				order = 4,
 				type = "group",
-				name = L["TARGET"],
+				name = L["Target"],
 				args = {
 					header = {
 						order = 1,
 						type = "header",
-						name = L["TARGET"]
+						name = L["Target"]
 					},
 					classIcon = {
 						order = 2,

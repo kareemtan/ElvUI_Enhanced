@@ -131,7 +131,6 @@ P.enhanced = {
 		}
 	},
 	tooltip = {
-		itemQualityBorderColor = false,
 		tooltipIcon = {
 			enable = false,
 			tooltipIconSpells = true,
@@ -212,6 +211,7 @@ P.enhanced = {
 	watchframe = {
 		enable = false,
 		level = false,
+		color = false,
 		city = "COLLAPSED",
 		pvp = "HIDDEN",
 		arena = "HIDDEN",
